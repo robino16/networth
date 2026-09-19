@@ -77,7 +77,7 @@ From the Accounts list, click the **refresh icon** on any account to log today's
 - **Deposit** — the amount you have put in (or the remaining loan balance as a negative number)
 - **Unrealized return** — any gain on top of your deposit (e.g. for funds or stocks)
 
-The dashboard and charts update immediately. Logging snapshots roughly once a month gives you useful trend data over time.
+The dashboard and charts update immediately. I recommend logging snapshots once a month — e.g. right before or after every paycheck. Set a recurring reminder and you'll build up a clear picture of your growth over time.
 
 ### 3. Add assets
 
