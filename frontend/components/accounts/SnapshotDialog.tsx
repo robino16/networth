@@ -114,7 +114,7 @@ export function SnapshotDialog({
       setIsDirty(false)
       return true
     } catch {
-      setError("Failed to save. Check that the backend is running.")
+      setError("Failed to save. Please try again.")
       return false
     } finally {
       setLoading(false)
