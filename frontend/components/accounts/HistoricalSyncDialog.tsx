@@ -94,7 +94,7 @@ export function HistoricalSyncDialog({ account, open, onOpenChange, onSuccess }:
       onSuccess()
       onOpenChange(false)
     } catch {
-      setError(`Failed after ${done} entries. Check that the backend is running.`)
+      setError(`Failed after ${done} entries. Please try again.`)
     } finally {
       setImporting(false)
     }

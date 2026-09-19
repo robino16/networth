@@ -75,7 +75,7 @@ export function AccountDialog({ mode, account, open, onOpenChange, onSuccess }: 
       onSuccess()
       onOpenChange(false)
     } catch {
-      setError("Failed to save. Check that the backend is running.")
+      setError("Failed to save. Please try again.")
     } finally {
       setLoading(false)
     }

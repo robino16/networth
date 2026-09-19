@@ -140,7 +140,7 @@ export function AssetDialog({ mode, asset, open, onOpenChange, onSuccess }: Prop
       onSuccess()
       onOpenChange(false)
     } catch {
-      setError("Failed to save. Check that the backend is running.")
+      setError("Failed to save. Please try again.")
     } finally {
       setLoading(false)
     }
