@@ -26,18 +26,3 @@ uv run uvicorn app.main:app --reload
 cd frontend
 bun dev
 ```
-
-## Backend Development
-
-To compile `requirement*.in` files do:
-
-```bash
-uv pip compile requirements.in -o requirements.txt
-uv pip compile requirements-dev.in -o requirements-dev.txt
-```
-
-Install them with:
-
-```bash
-uv pip install -r .\requirements-dev.txt
-```
