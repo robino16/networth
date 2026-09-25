@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { ChevronLeft, History, Pencil, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, History, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -27,9 +27,9 @@ import {
 import { SnapshotDialog } from "@/components/accounts/SnapshotDialog"
 import { HistoricalSyncDialog } from "@/components/accounts/HistoricalSyncDialog"
 import { fetcher, api } from "@/lib/api"
-import { formatNOK, formatDate, formatMonthYear } from "@/lib/formatters"
+import { formatNOK, formatDate, formatMonthYear, formatPct } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
-import type { Account, Snapshot } from "@/lib/types"
+import type { Account, AccountWithSnapshot, Snapshot } from "@/lib/types"
 
 function SnapshotTooltip({ active, payload, label }: {
   active?: boolean
@@ -54,9 +54,19 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const { data: account } = useSWR<Account>(`/api/accounts/${id}`, fetcher)
   const { data: snapshots, mutate: mutateSnapshots } = useSWR<Snapshot[]>(`/api/accounts/${id}/snapshots`, fetcher)
+  const { data: allAccounts } = useSWR<AccountWithSnapshot[]>("/api/accounts", fetcher)
+
+  const accountList = allAccounts ?? []
+  const currentIndex = accountList.findIndex((a) => a.account.id === id)
+  const prevAccount = currentIndex > 0 ? accountList[currentIndex - 1] : null
+  const nextAccount = currentIndex !== -1 && currentIndex < accountList.length - 1 ? accountList[currentIndex + 1] : null
 
   const [editSnap, setEditSnap] = useState<Snapshot | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+
+  const ownershipPct = account?.ownership_pct ?? 1
+  const isPartial = ownershipPct < 1
+  const totalLabel = isPartial ? "Your share" : "Total"
 
   const handleDelete = async (snap: Snapshot) => {
     if (!confirm(`Delete snapshot from ${formatDate(snap.recorded_at)}?`)) return
@@ -68,7 +78,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
     date: s.recorded_at,
     Deposit: s.deposit,
     "Unrealized Return": s.unrealized_return,
-    Total: s.total,
+    [totalLabel]: s.total * ownershipPct,
   }))
 
   return (
@@ -78,14 +88,39 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           <Button variant="ghost" size="icon-sm" asChild>
             <Link href="/accounts"><ChevronLeft /></Link>
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">{account?.name ?? "Account"}</h1>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{account?.name ?? "Account"}</h1>
+            {account && (
+              <p className="text-sm text-muted-foreground">{formatPct(account.ownership_pct)} ownership</p>
+            )}
+          </div>
         </div>
-        {account && (
-          <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
-            <History className="mr-2 h-4 w-4" />
-            Load historical data
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {prevAccount ? (
+            <Button variant="outline" size="icon-sm" asChild title={`Previous: ${prevAccount.account.name}`}>
+              <Link href={`/accounts/${prevAccount.account.id}`}><ChevronLeft className="h-4 w-4" /></Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="icon-sm" disabled title="No previous account">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          {nextAccount ? (
+            <Button variant="outline" size="icon-sm" asChild title={`Next: ${nextAccount.account.name}`}>
+              <Link href={`/accounts/${nextAccount.account.id}`}><ChevronRight className="h-4 w-4" /></Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="icon-sm" disabled title="No next account">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+          {account && (
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <History className="mr-2 h-4 w-4" />
+              Load historical data
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -107,7 +142,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                 <Legend />
                 <Area type="monotone" dataKey="Deposit" stroke="#16a34a" fill="#16a34a20" strokeWidth={2} dot={false} />
                 <Area type="monotone" dataKey="Unrealized Return" stroke="#7c3aed" fill="#7c3aed10" strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="Total" stroke="#2563eb" fill="#2563eb10" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey={totalLabel} stroke="#2563eb" fill="#2563eb10" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -123,7 +158,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Deposit</TableHead>
                 <TableHead className="text-right">Unrealized Return</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">{totalLabel}</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -140,8 +175,8 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                   <TableCell className={cn("text-right tabular-nums", snap.unrealized_return < 0 && "text-destructive")}>
                     {formatNOK(snap.unrealized_return)}
                   </TableCell>
-                  <TableCell className={cn("text-right tabular-nums font-medium", snap.total < 0 && "text-destructive")}>
-                    {formatNOK(snap.total)}
+                  <TableCell className={cn("text-right tabular-nums font-medium", snap.total * ownershipPct < 0 && "text-destructive")}>
+                    {formatNOK(snap.total * ownershipPct)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { History, Pencil, RefreshCw, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronUp, History, Pencil, RefreshCw, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -39,6 +39,14 @@ interface Props {
 export function AccountsTable({ rows, onMutate }: Props) {
   const [editRow, setEditRow] = useState<AccountWithSnapshot | null>(null)
   const [snapshotIndex, setSnapshotIndex] = useState<number | null>(null)
+
+  const handleMove = async (idx: number, direction: "up" | "down") => {
+    const newOrder = rows.map((r) => r.account.id)
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1
+    ;[newOrder[idx], newOrder[targetIdx]] = [newOrder[targetIdx], newOrder[idx]]
+    await api.accounts.reorder(newOrder)
+    onMutate()
+  }
 
   const snapshotRow = snapshotIndex !== null ? (rows[snapshotIndex] ?? null) : null
 
@@ -95,6 +103,12 @@ export function AccountsTable({ rows, onMutate }: Props) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
+                      <Button size="icon-sm" variant="ghost" title="Move up" onClick={() => handleMove(idx, "up")} disabled={idx === 0}>
+                        <ChevronUp />
+                      </Button>
+                      <Button size="icon-sm" variant="ghost" title="Move down" onClick={() => handleMove(idx, "down")} disabled={idx === rows.length - 1}>
+                        <ChevronDown />
+                      </Button>
                       <Button size="icon-sm" variant="ghost" title="Update balance" onClick={() => setSnapshotIndex(idx)}>
                         <RefreshCw />
                       </Button>
