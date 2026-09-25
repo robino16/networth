@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { ChevronLeft, History, Pencil, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, History, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -29,7 +29,7 @@ import { HistoricalSyncDialog } from "@/components/accounts/HistoricalSyncDialog
 import { fetcher, api } from "@/lib/api"
 import { formatNOK, formatDate, formatMonthYear } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
-import type { Account, Snapshot } from "@/lib/types"
+import type { Account, AccountWithSnapshot, Snapshot } from "@/lib/types"
 
 function SnapshotTooltip({ active, payload, label }: {
   active?: boolean
@@ -54,6 +54,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const { data: account } = useSWR<Account>(`/api/accounts/${id}`, fetcher)
   const { data: snapshots, mutate: mutateSnapshots } = useSWR<Snapshot[]>(`/api/accounts/${id}/snapshots`, fetcher)
+  const { data: allAccounts } = useSWR<AccountWithSnapshot[]>("/api/accounts", fetcher)
+
+  const accountList = allAccounts ?? []
+  const currentIndex = accountList.findIndex((a) => a.account.id === id)
+  const prevAccount = currentIndex > 0 ? accountList[currentIndex - 1] : null
+  const nextAccount = currentIndex !== -1 && currentIndex < accountList.length - 1 ? accountList[currentIndex + 1] : null
 
   const [editSnap, setEditSnap] = useState<Snapshot | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -80,12 +86,32 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">{account?.name ?? "Account"}</h1>
         </div>
-        {account && (
-          <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
-            <History className="mr-2 h-4 w-4" />
-            Load historical data
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {prevAccount ? (
+            <Button variant="outline" size="icon-sm" asChild title={`Previous: ${prevAccount.account.name}`}>
+              <Link href={`/accounts/${prevAccount.account.id}`}><ChevronLeft className="h-4 w-4" /></Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="icon-sm" disabled title="No previous account">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          {nextAccount ? (
+            <Button variant="outline" size="icon-sm" asChild title={`Next: ${nextAccount.account.name}`}>
+              <Link href={`/accounts/${nextAccount.account.id}`}><ChevronRight className="h-4 w-4" /></Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="icon-sm" disabled title="No next account">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+          {account && (
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <History className="mr-2 h-4 w-4" />
+              Load historical data
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
