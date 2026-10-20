@@ -6,6 +6,12 @@ A personal net worth tracker with manual data entry. Log account balances at any
 
 ![Dashboard](images/dashboard.png)
 
+## Live Demo
+
+**[Try it now at robinoms.no/networth](https://www.robinoms.no/networth)**
+
+No sign-up, no backend — your data stays in your browser only. The live version is part of my [portfolio site](https://www.robinoms.no) and is built with React (without Tailwind or shadcn/ui), so it looks a bit different from this repo, but has the same features.
+
 ## Features
 
 - Manual balance snapshots per account (no bank integrations or transaction tracking)
